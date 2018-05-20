@@ -12,8 +12,8 @@ windowSize = 33; % in samples, has to be odd
 
 overlap = 0.5; % for hanning window 50% is appropriate
 
-%input = babbles;
-input = ones(size(babbles));
+input = babbles;
+%input = ones(size(babbles));
 
 framesTime = windowing(input,windowSize,overlap);
 
