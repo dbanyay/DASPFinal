@@ -8,12 +8,15 @@ clear all
 
 %% Framing
 
-windowSize = 33; % in samples, has to be odd
+%windowSize = 321; % in samples, has to be odd, ~20ms
+windowSize = 321;
 
 overlap = 0.5; % for hanning window 50% is appropriate
 
-input = babbles;
+%input = babbles;
+input = clean1s;
 %input = ones(size(babbles));
+inputSize = size(input);
 
 framesTime = windowing(input,windowSize,overlap);
 
@@ -43,7 +46,7 @@ framesProcessedTime = ifft(framesProcessedFreq);
 
 %% Overlap add
 
-output = overlapAdd(framesProcessedTime,windowSize, overlap);
+output = overlapAdd(framesProcessedTime,windowSize, overlap, inputSize);
 
 subplot(211)
 plot(input);

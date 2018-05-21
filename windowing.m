@@ -4,21 +4,17 @@ function frames = windowing(input, windowSize, overlap)
 
 windowfunc = hann(windowSize)';
 
-delay = floor(overlap*windowSize);
-
-numFrames = floor(length(input)/windowSize/overlap);
-
-frames = zeros(numFrames, windowSize);
+delay = overlap*(windowSize+1);
 
 curWindow = 1;
 cntr = 1;
 
-while cntr <= numFrames
+while curWindow + windowSize <= length(input)
     
     frames(cntr, :) = windowfunc.*input(curWindow:curWindow+windowSize-1);
-    curWindow = curWindow + delay;
+    curWindow = cntr*delay;
     cntr = cntr+1;
-    
 end
+
 end
 
