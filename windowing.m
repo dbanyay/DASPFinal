@@ -2,7 +2,7 @@ function frames = windowing(input, windowSize, overlap)
 %createFrames Creates time windows from the input
 %   taking input, windowsize and overlap into consideration
 
-windowfunc = hann(windowSize)';
+windowfunc = triang(windowSize)';
 
 delay = overlap*(windowSize+1);
 

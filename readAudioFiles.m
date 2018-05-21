@@ -1,4 +1,4 @@
-function [Fs,clean1s,clean2s,babbles,nonstats,shapeds] = readAudioFiles()
+function [Fs,clean1s,clean2s,babbles,nonstats,shapeds,mixed1a,mixed1b] = readAudioFiles()
 %readAudioFiles Read audio files, create shorter versions
 
 [clean1, Fs] = audioread('samples\clean_speech.wav');
@@ -32,6 +32,7 @@ babbles = babblenoise(1:5*Fs)';
 nonstats = nonstatnoise(1:5*Fs)';
 shapeds = speechshapednoise(1:5*Fs)';
 
+
 timeaxis = 1:5*Fs;
 timeaxis = timeaxis./Fs;
 
@@ -50,5 +51,11 @@ timeaxis = timeaxis./Fs;
 % subplot(515)
 % plot(timeaxis,shapeds);
 % title('Speech shaped noise short')
+
+%% Create mixed signals
+
+mixed1a = clean1s + nonstats;
+mixed1b = clean1s + shapeds;
+
 end
 

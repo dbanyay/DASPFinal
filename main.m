@@ -4,17 +4,18 @@ clear all
 
 %% Read audio files
 
-[Fs,clean1s,clean2s,babbles,nonstats,shapeds] = readAudioFiles();
+[Fs,clean1s,clean2s,babbles,nonstats,shapeds,mixed1a,mixed1b] = readAudioFiles();
 
 %% Framing
 
-%windowSize = 321; % in samples, has to be odd, ~20ms
-windowSize = 321;
+windowSize = 321; % in samples, has to be odd, ~20ms
 
 overlap = 0.5; % for hanning window 50% is appropriate
 
 %input = babbles;
-input = clean1s;
+%input = clean1s;
+%input = mixed1a;
+input = mixed1b;
 %input = ones(size(babbles));
 inputSize = size(input);
 
@@ -24,16 +25,13 @@ framesTime = windowing(input,windowSize,overlap);
 framesFreq = fft(framesTime);
 
 
-%% Gain function
-
-
-
 %% Noise PSD estimator
 
 
 
 %% Speech PSD estimator
 
+%% Gain function
 
 %% Apply gain
 

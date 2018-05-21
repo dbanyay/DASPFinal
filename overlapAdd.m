@@ -14,7 +14,7 @@ cntr = 1;
 while cntr <= size(input,1)
     output(curWindow:curWindow+windowSize-1) = output(curWindow:curWindow+windowSize-1) + input(cntr, :);
     curWindow = cntr*delay;
-    cntr = cntr+1
+    cntr = cntr+1;
 end
 
 end
