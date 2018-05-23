@@ -22,7 +22,7 @@ inputSize = size(input);
 framesTime = windowing(input,windowSize,overlap);
 
 %% Apply transform
-framesFreq = fft(framesTime);
+framesFreq = fft(framesTime')';  % transpose needed because we have rows with the frames, fft applies for columns
 
 
 %% Noise PSD estimator
@@ -40,7 +40,7 @@ framesProcessedFreq = applyGain(framesFreq);
 
 %% Inverse transform
 
-framesProcessedTime = ifft(framesProcessedFreq);
+framesProcessedTime = ifft(framesProcessedFreq')';
 
 %% Overlap add
 
