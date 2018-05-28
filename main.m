@@ -27,6 +27,9 @@ framesFreq = fft(framesTime')';  % transpose needed because we have rows with th
 
 %% Noise PSD estimator
 
+k = 25;  % slide window size
+
+noisePSD(framesFreq,Fs,k);
 
 
 %% Speech PSD estimator
