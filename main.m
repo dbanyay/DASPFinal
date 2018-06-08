@@ -21,6 +21,7 @@ inputSize = size(input);
 
 framesTime = windowing(input,windowSize,overlap);
 
+
 %% Apply transform
 framesFreq = fft(framesTime')';  % transpose needed because we have rows with the frames, fft applies for columns
 
@@ -29,7 +30,7 @@ framesFreq = fft(framesTime')';  % transpose needed because we have rows with th
 
 k = 25;  % slide window size
 
-noisePSD(framesFreq,Fs,k);
+PSD_Noise = noisePSD(framesFreq,Fs,k);
 
 
 %% Speech PSD estimator
