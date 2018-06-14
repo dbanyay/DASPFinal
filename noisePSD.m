@@ -1,28 +1,41 @@
-function PSD_Noise = noisePSD(framesFreq,Fs,k)
+function noise_PSD = noisePSD(framesFreq,framesFreqSquared,Fs,k,windowSize,alpha)
 % noisePSD create sliding window, estimate noise floor
+
+%% Exponential smoother
+
+framesFreqSmoothed(1,:) = framesFreqSquared(1,:);
+
+for bin = 1:size(framesFreqSquared,2)  % iterate through all bins
+    for time = 2:size(framesFreqSquared,1)  % iterate through time     
+        framesFreqSmoothed(time,bin) = alpha * framesFreqSmoothed(time-1,bin) + (1-alpha)*framesFreqSquared(time,bin);
+    end    
+end
 
 
 %% Create sliding window for each frame, take Qmin
-alpha = 0.6; % smoothing parameter for recursive averaging noise estimation
-for i = 1:size(framesFreq,2)  % iterate througs all freq segments
-    index = 1;
-    cntr = 1;
-    while index+k < size(framesFreq,1)  % iterate through frames
-       if index == 1
-        %Q(cntr,1:k) = framesFreq(index:index+k-1,i);
-            P_y(cntr) = 1/k*sum(framesFreq(index:index+k-1,i)); % Bartlett estimate
-            psd_n(cntr) = P_y(cntr);  % assume that the first time-frame is noise only
-       else
-            P_y(cntr) = 1/k*sum(framesFreq(index:index+k-1,i));
-            psd_n(cntr) = alpha * psd_n(cntr-1) + (1-alpha) * P_y(cntr);
-       end
 
-        index = index + k;
-        cntr = cntr +1;
-    end
-    PSD_Noise(i,:) = psd_n;      
+noise_PSD = zeros(size(framesFreqSquared));
+
+for bin = 1:size(framesFreqSmoothed,2)  % iterate through all bins
+    for time = 1:size(framesFreqSmoothed,1)-k+1  % iterate through time     
+
+        noise_PSD(time:time+k-1,bin) = min(framesFreqSmoothed(time:time+k-1,bin));        
+        
+    end    
 end
 
-end
 
+hold on
+
+plot(framesFreqSquared(:,1));
+
+plot(framesFreqSmoothed(:,1));
+
+plot(noise_PSD(:,1));
+
+hold off
+
+
+
+end
 

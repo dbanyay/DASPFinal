@@ -19,6 +19,8 @@ input = mixed1b;
 %input = ones(size(babbles));
 inputSize = size(input);
 
+%spectrogram(input,blackman(1024),512,256,Fs,'yaxis');
+
 framesTime = windowing(input,windowSize,overlap);
 
 
@@ -28,18 +30,23 @@ framesFreq = fft(framesTime')';  % transpose needed because we have rows with th
 
 %% Noise PSD estimator
 
-k = 25;  % slide window size
+framesFreqSquared = freqSquare(framesFreq,windowSize);
 
-PSD_Noise = noisePSD(framesFreq,Fs,k);
+k = 25;  % slide window size
+alpha = 0.85; % alpha for exponential smoother
+
+noise_PSD = noisePSD(framesFreq,framesFreqSquared,Fs,k,windowSize,alpha);
 
 
 %% Speech PSD estimator
 
 %% Gain function
 
+
+
 %% Apply gain
 
-framesProcessedFreq = applyGain(framesFreq);
+framesProcessedFreq = applyGain(smoothedFramesFreq);
 
 
 %% Inverse transform
