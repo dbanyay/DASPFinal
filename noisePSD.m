@@ -1,7 +1,6 @@
-function noise_PSD = noisePSD(framesFreqSmoothed, Fs,k)
-% noisePSD create sliding window, estimate noise floor
-
+function noise_PSD = noisePSD(framesFreqSmoothed,k)
 %% Create sliding window for each frame, take Qmin
+
 
 for bin = 1:size(framesFreqSmoothed,2)  % iterate through all bins
     for time = 1:size(framesFreqSmoothed,1)-k+1  % iterate through time     
@@ -11,6 +10,7 @@ for bin = 1:size(framesFreqSmoothed,2)  % iterate through all bins
     end    
 end
 
-end
 
+
+end
 

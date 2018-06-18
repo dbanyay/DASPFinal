@@ -22,6 +22,8 @@ inputSize = size(input);
 
 framesTime_n  =windowing(babbles, windowSize, overlap);
 framesTime_c = windowing(clean1s, windowSize,overlap);
+
+%spectrogram(input,blackman(1024),512,256,Fs,'yaxis');
 framesTime = windowing(input,windowSize,overlap);
 
 
@@ -30,20 +32,19 @@ framesFreq = fft(framesTime')';  % transpose needed because we have rows with th
 framesFreq_c = fft(framesTime_c')';
 framesFreq_n = fft(framesTime_n')';
 
+%% Noise PSD estimator
 framesFreqSquared = (abs(framesFreq).^2);
 alpha = 0.85;
 smoothed_framesFreq = reduce_variance(framesFreqSquared, alpha);
-%% Noise PSD estimator
 
 k = 80;  % slide window size
-PSD_Noise = noisePSD(smoothed_framesFreq,Fs,k);
+PSD_Noise = noisePSD(smoothed_framesFreq,k);
 
 t = [1:321]./windowSize*Fs;
 figure;
 plot(sqrt(PSD_Noise(:,250)),'r');
 hold on
 plot(sqrt(smoothed_framesFreq(:,250)));
-% plot(abs(framesFreq(:,100)),'b');
 plot(abs(framesFreq(:,250)),'g');
 hold off
 
@@ -81,18 +82,19 @@ plot(abs(framesSpeech(:,1)));
 % plot(abs(Hwiener.*framesFreq(200,:)));
 % figure;
 % plot(abs(framesFreq(200,:)));
+
 %% Gain function
+
+
 
 %% Apply gain
 
-framesProcessedFreq = applyGain(framesSpeech);
-framesProcessedFreq_o = applyGain(framesFreq);
 
 
 %% Inverse transform
 
-framesProcessedTime = ifft(framesProcessedFreq','symmetric')';
-framesProcessedTime_o = ifft(framesProcessedFreq_o')';
+framesProcessedTime = ifft(framesSpeech','symmetric')';
+framesProcessedTime_o = ifft(framesFreq')';
 
 %% Overlap add
 
