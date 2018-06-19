@@ -1,4 +1,4 @@
-function [Fs,clean1s,clean2s,babbles_new,nonstats,shapeds,mixed1a,mixed1b,mixed1c] = readAudioFiles()
+function [Fs,clean1s,clean2s,babbles,nonstats,shapeds,mixed1a,mixed1b,mixed1c] = readAudioFiles()
 %readAudioFiles Read audio files, create shorter versions
 
 [clean1, Fs] = audioread('samples\clean_speech.wav');
@@ -54,17 +54,10 @@ timeaxis = timeaxis./Fs;
 
 %% Create mixed signals
 
-%power of signal
-P_s = sum((abs(clean1s).^2)./length(clean1s));
-P_n = sum((abs(babbles).^2)./length(babbles));
-SNR_o = 10*log10(P_s./P_n);
 SNR = 1;
-P_n_desired = P_s./(10^(SNR/10));
-babbles_new = babbles.*sqrt(P_n_desired/P_n);
-P_n_new = sum((abs(babbles_new).^2)./length(babbles_new));
-mixed1a = clean1s + nonstats;
-mixed1b = clean1s + shapeds;
-mixed1c = clean1s + babbles_new;
+mixed1a = create_NoisySpeech(clean1s, nonstats, SNR);
+mixed1b = create_NoisySpeech(clean1s, shapeds, SNR);
+mixed1c = create_NoisySpeech(clean1s, babbles, SNR);
 
 end
 
