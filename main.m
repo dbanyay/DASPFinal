@@ -41,8 +41,8 @@ PSD_Noise = noisePSD(smoothed_framesFreq,k);
 %noisy speech
 alpha_matrix = estimate_alpha(smoothed_framesFreq, PSD_Noise, framesFreqSquared);
 
-smoothed_framesFreq = reduce_variance(framesFreqSquared, alpha_matrix);
-PSD_Noise = noisePSD(smoothed_framesFreq,k);
+% smoothed_framesFreq = reduce_variance(framesFreqSquared, alpha_matrix);
+% PSD_Noise = noisePSD(smoothed_framesFreq,k);
 %bias compensation
 Bmin = estimate_Bmin(smoothed_framesFreq, PSD_Noise, k, alpha_matrix);
 PSD_Noise = PSD_Noise.*Bmin;
@@ -90,22 +90,19 @@ Hstsa = abs(Hstsa);
 %wiener gain function
 Hgain = pri_SNR./(pri_SNR+1);
 
-framesSpeech  =(Hgain.*abs(framesFreq)).*exp(complex(0,angle(framesFreq)));
+framesSpeech_1  =(Hstsa.*abs(framesFreq)).*exp(complex(0,angle(framesFreq)));
+framesSpeech_2  =(Hgain.*abs(framesFreq)).*exp(complex(0,angle(framesFreq)));
 
-figure;
-subplot(2,1,1)
-plot(abs(framesFreq(:,1)));
-subplot(2,1,2)
-plot(abs(framesSpeech(:,1)));
 
 %% Inverse transform
 
-framesProcessedTime = ifft(framesSpeech','symmetric')';
-framesProcessedTime_o = ifft(framesFreq')';
+framesProcessedTime_1 = ifft(framesSpeech_1','symmetric')';
+framesProcessedTime_2 = ifft(framesSpeech_2','symmetric')';
 
 %% Overlap add
 
-output = overlapAdd(framesProcessedTime,windowSize, overlap, inputSize);
+output_1 = overlapAdd(framesProcessedTime_1,windowSize, overlap, inputSize);
+output_2 = overlapAdd(framesProcessedTime_2,windowSize, overlap, inputSize);
 
 figure;
 % plot(input)
@@ -113,10 +110,10 @@ figure;
 % plot(output)
 % hold off
 subplot(211)
-plot(input);
+plot(output_1);
 title('Input')
 ylim([-0.5 0.5])
 subplot(212)
-plot(output);
+plot(output_2);
 title('Output')
 ylim([-0.5 0.5])
