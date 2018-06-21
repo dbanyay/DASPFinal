@@ -30,12 +30,22 @@ framesFreq = fft(framesTime')';  % transpose needed because we have rows with th
 framesFreq_c = fft(framesTime_c')';
 
 %% Noise PSD estimator
-framesFreqSquared = (abs(framesFreq).^2);
+framesFreqSquared = (abs(framesFreq).^2); % | |^2
 alpha = 0.85;
+%a time-averaged magnitude spectrum to reduce the error variance
 smoothed_framesFreq = reduce_variance(framesFreqSquared, alpha);
 
-k = 80;  % slide window size
+k = 80;  % sliding window D size, empirically set to 96
 PSD_Noise = noisePSD(smoothed_framesFreq,k);
+%implementing a time-varying and frequency-depended smoothing parameter for
+%noisy speech
+alpha_matrix = estimate_alpha(smoothed_framesFreq, PSD_Noise, framesFreqSquared);
+
+smoothed_framesFreq = reduce_variance(framesFreqSquared, alpha_matrix);
+PSD_Noise = noisePSD(smoothed_framesFreq,k);
+%bias compensation
+Bmin = estimate_Bmin(smoothed_framesFreq, PSD_Noise, k, alpha_matrix);
+PSD_Noise = PSD_Noise.*Bmin;
 
 t = [1:321]./windowSize*Fs;
 figure;
@@ -45,11 +55,13 @@ plot(sqrt(smoothed_framesFreq(:,250)));
 plot(abs(framesFreq(:,250)),'g');
 hold off
 
-%% Speech PSD estimator 
-P_yy = framesFreqSquared;
+%% Speech PSD estimator
+P_yy = framesFreqSquared; %mayb be estimated through the periodogram or a smoothed version
 P_nn = PSD_Noise;
-Hwiener = max((P_yy - P_nn)./P_yy,0.2);
-PSD_Speech = (Hwiener.*abs(framesFreq)).*exp(complex(0,angle(framesFreq)));
+b = 1.5; %the amount of substraction
+Hwiener = max((P_yy - b.*P_nn)./P_yy,0);
+PSD_Speech = (Hwiener.*framesFreqSquared);
+% PSD_Speech = max(framesFreqSquared - b.*PSD_Noise,0);
 % figure;
 % plot(abs(sqrt(PSD_Speech(:,1))));
 % hold on
@@ -57,36 +69,34 @@ PSD_Speech = (Hwiener.*abs(framesFreq)).*exp(complex(0,angle(framesFreq)));
 % hold off
 
 figure;
-plot(abs(PSD_Speech(:,50)),'r');
+plot(sqrt(PSD_Speech(:,50)),'r');
 hold on
 plot(abs(framesFreq_c(:,50)),'b');
 plot(abs(framesFreq(:,50)), 'g');
 hold off
 
-% framesSpeech = sqrt(PSD_Speech).*windowSize;
-framesSpeech = PSD_Speech;
+
+
+
+
+%% apply gain function
+[pri_SNR, pos_SNR] = estimate_priori_SNR(framesFreqSquared, PSD_Speech, PSD_Noise, 0.98);
+u = (pri_SNR./(1+pri_SNR)).*pos_SNR;
+com1 = sqrt(pi.*u)./(2.*pos_SNR);
+com2 = exp(-u./2);
+com3 = (1+u).*besseli(0,u./2) + u.*besseli(1,u./2); %modified bessel function of first kind
+Hstsa = com1.*com2.*com3;
+Hstsa = abs(Hstsa);
+%wiener gain function
+Hgain = pri_SNR./(pri_SNR+1);
+
+framesSpeech  =(Hgain.*abs(framesFreq)).*exp(complex(0,angle(framesFreq)));
 
 figure;
 subplot(2,1,1)
 plot(abs(framesFreq(:,1)));
 subplot(2,1,2)
 plot(abs(framesSpeech(:,1)));
-
-% Hwiener = (framesFreq(200,:)-sqrt(PSD_Noise(5,:)))./framesFreq(200,:);
-% figure;
-% plot(abs(Hwiener));
-% figure;
-% plot(abs(Hwiener.*framesFreq(200,:)));
-% figure;
-% plot(abs(framesFreq(200,:)));
-
-%% Gain function
-
-
-
-%% Apply gain
-
-
 
 %% Inverse transform
 
