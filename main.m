@@ -4,7 +4,11 @@ clear all
 
 %% Read audio files
 
-[Fs,clean1s,clean2s,babbles,nonstats,shapeds,mixed1a,mixed1b,mixed1c,mic1,mic2] = readAudioFiles();
+c = 340; % sound of the speed, in m/s
+alpha = 40; % for multi mic, beam angle in degrees
+d = 0.215; % distance of the 2 mics, in m
+
+[Fs,clean1s,clean2s,babbles,nonstats,shapeds,mixed1a,mixed1b,mixed1c,mic1,mic2] = readAudioFiles(c, alpha, d);
 
 %% Framing
 
@@ -128,3 +132,33 @@ subplot(313)
 plot(output_3);
 title('LSA')
 ylim([-0.5 0.5])
+
+%% Multi microphone system
+
+inputSize2 = size(mic1);
+
+
+framesTime_mic1 = windowing(mic1, windowSize,overlap);
+framesTime_mic2 = windowing(mic2,windowSize,overlap);
+
+framesFreq_mic1 = fft(framesTime_mic1')'; 
+framesFreq_mic2 = fft(framesTime_mic2')';
+
+Sk = delayAndSum(framesFreq_mic1,framesFreq_mic1,t,alpha,Fs,c);
+
+Sk_t = ifft(Sk','symmetric')';
+
+output_ds = overlapAdd(Sk_t,windowSize, overlap, inputSize2);
+
+
+figure;
+subplot(211)
+plot(mic1);
+title('Input')
+ylim([-0.5 0.5])
+subplot(212)
+plot(output_ds);
+title('Output')
+ylim([-0.5 0.5])
+
+
