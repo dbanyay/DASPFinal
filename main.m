@@ -14,8 +14,8 @@ overlap = 0.5; % for hanning window 50% is appropriate
 
 %input = babbles;
 %input = clean1s;
-input = mixed1a;
-% input = mixed1b;
+% input = mixed1a;
+input = mixed1b;
 % input = mixed1c;
 %input = ones(size(babbles));
 inputSize = size(input);
@@ -38,11 +38,8 @@ smoothed_framesFreq = reduce_variance(framesFreqSquared, alpha);
 k = 80;  % sliding window D size, empirically set to 96
 PSD_Noise = noisePSD(smoothed_framesFreq,k);
 %implementing a time-varying and frequency-depended smoothing parameter for
-%noisy speech
+%noisy speech: for constructing Bias Compensation Matrix
 alpha_matrix = estimate_alpha(smoothed_framesFreq, PSD_Noise, framesFreqSquared);
-
-% smoothed_framesFreq = reduce_variance(framesFreqSquared, alpha_matrix);
-% PSD_Noise = noisePSD(smoothed_framesFreq,k);
 %bias compensation
 Bmin = estimate_Bmin(smoothed_framesFreq, PSD_Noise, k, alpha_matrix);
 PSD_Noise = PSD_Noise.*Bmin;
@@ -59,14 +56,9 @@ hold off
 P_yy = framesFreqSquared; %mayb be estimated through the periodogram or a smoothed version
 P_nn = PSD_Noise;
 b = 1.5; %the amount of substraction
-Hwiener = max((P_yy - b.*P_nn)./P_yy,0);
-PSD_Speech = (Hwiener.*framesFreqSquared);
-% PSD_Speech = max(framesFreqSquared - b.*PSD_Noise,0);
-% figure;
-% plot(abs(sqrt(PSD_Speech(:,1))));
-% hold on
-% plot(abs(sqrt(framesFreqSquared(:,1))));
-% hold off
+H = max((P_yy - b.*P_nn)./P_yy,0);
+PSD_Speech = (H.*framesFreqSquared);
+
 
 figure;
 plot(sqrt(PSD_Speech(:,50)),'r');
@@ -86,21 +78,22 @@ com1 = sqrt(pi.*u)./(2.*pos_SNR);
 com2 = exp(-u./2);
 com3 = (1+u).*besseli(0,u./2) + u.*besseli(1,u./2); %modified bessel function of first kind
 Hstsa = com1.*com2.*com3;
-Hstsa = abs(Hstsa);
 %wiener gain function
-Hgain = pri_SNR./(pri_SNR+1);
+Hwiener = pri_SNR./(pri_SNR+1);
 
 framesSpeech_1  =(Hstsa.*abs(framesFreq)).*exp(complex(0,angle(framesFreq)));
-framesSpeech_2  =(Hgain.*abs(framesFreq)).*exp(complex(0,angle(framesFreq)));
+framesSpeech_2  =(Hwiener.*abs(framesFreq)).*exp(complex(0,angle(framesFreq)));
 
 
 %% Inverse transform
 
+framesProcessedTime_o = ifft(framesFreq')';
 framesProcessedTime_1 = ifft(framesSpeech_1','symmetric')';
 framesProcessedTime_2 = ifft(framesSpeech_2','symmetric')';
 
 %% Overlap add
 
+input = overlapAdd(framesProcessedTime_o,windowSize, overlap, inputSize);
 output_1 = overlapAdd(framesProcessedTime_1,windowSize, overlap, inputSize);
 output_2 = overlapAdd(framesProcessedTime_2,windowSize, overlap, inputSize);
 
@@ -109,11 +102,15 @@ figure;
 % hold on
 % plot(output)
 % hold off
-subplot(211)
-plot(output_1);
+subplot(311)
+plot(input);
 title('Input')
 ylim([-0.5 0.5])
-subplot(212)
+subplot(312)
+plot(output_1);
+title('Output')
+ylim([-0.5 0.5])
+subplot(313)
 plot(output_2);
 title('Output')
 ylim([-0.5 0.5])
