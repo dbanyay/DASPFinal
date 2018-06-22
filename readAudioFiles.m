@@ -1,4 +1,4 @@
-function [Fs,clean1s,clean2s,babbles,nonstats,shapeds,mixed1a,mixed1b,mixed1c,mic1,mic2,t,alpha,c] = readAudioFiles(c,alpha,d)
+function [Fs,clean1s,clean2s,babbles,nonstats,shapeds,mixed1a,mixed1b,mixed1c,mic1,mic_sigs, alpha,c] = readAudioFiles(c,alpha, d)
 %readAudioFiles Read audio files, create shorter versions
 
 [clean1, Fs] = audioread('samples\clean_speech.wav');
@@ -63,8 +63,7 @@ mixed1c = create_NoisySpeech(clean1s, babbles, SNR);
 
 SNRmulti = 1;
 
-[mic1,mic2,t] = createMultiMicSignal(clean1s, nonstats, SNRmulti, d, alpha, c, Fs);
-
+[mic1,mic_sigs] = createMultiMicSignal(clean1s, nonstats, SNRmulti, d, alpha, c, Fs);
 
 end
 

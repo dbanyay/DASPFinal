@@ -5,10 +5,10 @@ clear all
 %% Read audio files
 
 c = 340; % sound of the speed, in m/s
-alpha = 40; % for multi mic, beam angle in degrees
-d = 0.215; % distance of the 2 mics, in m
+alpha = 40; % beam angle in degree, as desired direction
+d = 0.045; % distance of the 2 mics, in m
 
-[Fs,clean1s,clean2s,babbles,nonstats,shapeds,mixed1a,mixed1b,mixed1c,mic1,mic2] = readAudioFiles(c, alpha, d);
+[Fs,clean1s,clean2s,babbles,nonstats,shapeds,mixed1a,mixed1b,mixed1c,mic1,mic_sigs] = readAudioFiles(c, alpha, d);
 
 %% Framing
 
@@ -96,69 +96,68 @@ Hgain = pri_SNR./(pri_SNR+1);
 
 num_future_samples = 6;
 
-Hlsa = estimate_H_lsa(pri_SNR,num_future_samples,u);
+% Hlsa = estimate_H_lsa(pri_SNR,num_future_samples,u);
 
 framesSpeech_1  =(Hstsa.*abs(framesFreq)).*exp(complex(0,angle(framesFreq)));
 framesSpeech_2  =(Hgain.*abs(framesFreq)).*exp(complex(0,angle(framesFreq)));
-framesSpeech_3  =(Hlsa.*abs(framesFreq(1:size(Hlsa,1),:))).*exp(complex(0,angle(framesFreq(1:size(Hlsa,1),:))));
+% framesSpeech_3  =(Hlsa.*abs(framesFreq(1:size(Hlsa,1),:))).*exp(complex(0,angle(framesFreq(1:size(Hlsa,1),:))));
 
 
 %% Inverse transform
 
 framesProcessedTime_1 = ifft(framesSpeech_1','symmetric')';
 framesProcessedTime_2 = ifft(framesSpeech_2','symmetric')';
-framesProcessedTime_3 = ifft(framesSpeech_3','symmetric')';
+% framesProcessedTime_3 = ifft(framesSpeech_3','symmetric')';
 
 %% Overlap add
 
 output_1 = overlapAdd(framesProcessedTime_1,windowSize, overlap, inputSize);
 output_2 = overlapAdd(framesProcessedTime_2,windowSize, overlap, inputSize);
-output_3 = overlapAdd(framesProcessedTime_3,windowSize, overlap, inputSize);
+%output_3 = overlapAdd(framesProcessedTime_3,windowSize, overlap, inputSize);
 
 figure;
 % plot(input)
 % hold on
 % plot(output)
 % hold off
-subplot(311)
+subplot(211)
 plot(output_1);
-title('Input')
+title('Output with Hstsa')
 ylim([-0.5 0.5])
-subplot(312)
+subplot(212)
 plot(output_2);
-title('Output')
+title('Output with Hwiener')
 ylim([-0.5 0.5])
-subplot(313)
-plot(output_3);
-title('LSA')
-ylim([-0.5 0.5])
+% subplot(313)
+% plot(output_3);
+% title('LSA')
+% ylim([-0.5 0.5])
 
 %% Multi microphone system
 
 inputSize2 = size(mic1);
 
-
-framesTime_mic1 = windowing(mic1, windowSize,overlap);
-framesTime_mic2 = windowing(mic2,windowSize,overlap);
+mic_sigs = mic_sigs';
+framesTime_mic1 = windowing(mic_sigs(1,:), windowSize,overlap);
+framesTime_mic2 = windowing(mic_sigs(2,:),windowSize,overlap);
 
 framesFreq_mic1 = fft(framesTime_mic1')'; 
 framesFreq_mic2 = fft(framesTime_mic2')';
 
-Sk = delayAndSum(framesFreq_mic1,framesFreq_mic1,t,alpha,Fs,c);
+W = delayAndSum(framesFreq_mic1,alpha,Fs,c,d);
+sk = W(2,:).*framesFreq_mic1 + W(1,:).*framesFreq_mic2;
 
-Sk_t = ifft(Sk','symmetric')';
+Sk_t = ifft(sk','symmetric')';
 
 output_ds = overlapAdd(Sk_t,windowSize, overlap, inputSize2);
 
 
 figure;
 subplot(211)
-plot(mic1);
+plot(mic_sigs(1,:));
 title('Input')
 ylim([-0.5 0.5])
 subplot(212)
 plot(output_ds)
 title('Output')
 ylim([-0.5 0.5])
-
-
