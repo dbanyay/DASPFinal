@@ -160,4 +160,3 @@ subplot(212)
 plot(output_ds);
 title('Output')
 ylim([-0.5 0.5])
-

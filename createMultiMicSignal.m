@@ -1,4 +1,4 @@
-function [mic1,mic2] = createMultiMicSignal(cleanSpeech, noise, SNR, d, alpha, c, Fs)
+function [mic1,mic2,t] = createMultiMicSignal(cleanSpeech, noise, SNR, d, alpha, c, Fs)
 %createMultichannelSignal Create multimicrophone signal
 
 P_s = sum((abs(cleanSpeech).^2)./length(cleanSpeech));
