@@ -1,4 +1,4 @@
-function [Fs,clean1s,clean2s,babbles,nonstats,shapeds,mixed1a,mixed1b,mixed1c] = readAudioFiles()
+function [Fs,clean1s,clean2s,babbles,nonstats,shapeds,mixed1a,mixed1b,mixed1c,mic1,mic2] = readAudioFiles()
 %readAudioFiles Read audio files, create shorter versions
 
 [clean1, Fs] = audioread('samples\clean_speech.wav');
@@ -58,6 +58,16 @@ SNR = 1;
 mixed1a = create_NoisySpeech(clean1s, nonstats, SNR);
 mixed1b = create_NoisySpeech(clean1s, shapeds, SNR);
 mixed1c = create_NoisySpeech(clean1s, babbles, SNR);
+
+%% Create signals for multichannel reduction
+
+SNRmulti = 1;
+d = 0.215;  % distance between microphones in m
+alpha = 40; % incoming soundwave angle in degrees
+c = 340; % speed of sound
+
+[mic1,mic2] = createMultiMicSignal(clean1s, nonstats, SNRmulti, d, alpha, c, Fs);
+
 
 end
 
