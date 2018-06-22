@@ -157,7 +157,7 @@ plot(mic1);
 title('Input')
 ylim([-0.5 0.5])
 subplot(212)
-plot(output_ds);
+plot(output_ds)
 title('Output')
 ylim([-0.5 0.5])
 
