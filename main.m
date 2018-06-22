@@ -90,30 +90,41 @@ Hstsa = abs(Hstsa);
 %wiener gain function
 Hgain = pri_SNR./(pri_SNR+1);
 
+num_future_samples = 6;
+
+Hlsa = estimate_H_lsa(pri_SNR,num_future_samples,u);
+
 framesSpeech_1  =(Hstsa.*abs(framesFreq)).*exp(complex(0,angle(framesFreq)));
 framesSpeech_2  =(Hgain.*abs(framesFreq)).*exp(complex(0,angle(framesFreq)));
+framesSpeech_3  =(Hlsa.*abs(framesFreq(1:size(Hlsa,1),:))).*exp(complex(0,angle(framesFreq(1:size(Hlsa,1),:))));
 
 
 %% Inverse transform
 
 framesProcessedTime_1 = ifft(framesSpeech_1','symmetric')';
 framesProcessedTime_2 = ifft(framesSpeech_2','symmetric')';
+framesProcessedTime_3 = ifft(framesSpeech_3','symmetric')';
 
 %% Overlap add
 
 output_1 = overlapAdd(framesProcessedTime_1,windowSize, overlap, inputSize);
 output_2 = overlapAdd(framesProcessedTime_2,windowSize, overlap, inputSize);
+output_3 = overlapAdd(framesProcessedTime_3,windowSize, overlap, inputSize);
 
 figure;
 % plot(input)
 % hold on
 % plot(output)
 % hold off
-subplot(211)
+subplot(311)
 plot(output_1);
 title('Input')
 ylim([-0.5 0.5])
-subplot(212)
+subplot(312)
 plot(output_2);
 title('Output')
+ylim([-0.5 0.5])
+subplot(313)
+plot(output_3);
+title('LSA')
 ylim([-0.5 0.5])

@@ -59,5 +59,12 @@ mixed1a = create_NoisySpeech(clean1s, nonstats, SNR);
 mixed1b = create_NoisySpeech(clean1s, shapeds, SNR);
 mixed1c = create_NoisySpeech(clean1s, babbles, SNR);
 
+%% Create signals for multichannel reduction
+
+SNRmulti = 1;
+
+[mic1,mic2] = createMultiMicSignal(signal, noise, SNRmulti, d);
+
+
 end
 
