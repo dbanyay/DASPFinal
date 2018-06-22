@@ -4,7 +4,7 @@ clear all
 
 %% Read audio files
 
-[Fs,clean1s,clean2s,babbles,nonstats,shapeds,mixed1a,mixed1b,mixed1c] = readAudioFiles();
+[Fs,clean1s,clean2s,babbles,nonstats,shapeds,mixed1a,mixed1b,mixed1c,mic1,mic2] = readAudioFiles();
 
 %% Framing
 
