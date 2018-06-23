@@ -14,9 +14,9 @@ noise_new1 = noise1.*sqrt(P_n_desired/P_n);
 noise_new2 = noise2.*sqrt(P_n_desired/P_n);
 
 mic1 = cleanSpeech; %source signal
-
+beta = alpha; %incoming angle for the noise signal
 [H_PW, h_IR_PW] = calculate_transfer_function_plane_wave(c, d, alpha, Fs);
-[H_PW, h_IR_PW_Noise] = calculate_transfer_function_plane_wave(c, d, 100, Fs);
+[H_PW, h_IR_PW_Noise] = calculate_transfer_function_plane_wave(c, d, beta, Fs); 
 mic_sigs = fftfilt(h_IR_PW, mic1);
 mic_noise2 = fftfilt(h_IR_PW_Noise, noise_new2);
 mic_noise = [noise_new1 mic_noise2(:,2)];

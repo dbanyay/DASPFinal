@@ -4,11 +4,7 @@ clear all
 
 %% Read audio files
 
-c = 340; % sound of the speed, in m/s
-alpha = 40; % beam angle in degree, as desired direction
-d = 0.045; % distance of the 2 mics, in m
-
-[Fs,clean1s,clean2s,babbles,nonstats,shapeds,mixed1a,mixed1b,mixed1c,mic1,mic_sigs] = readAudioFiles(c, alpha, d);
+[Fs,clean1s,clean2s,babblenoise,nonstatnoise,speechshapednoise,mixed1a,mixed1b,mixed1c] = readAudioFiles();
 
 %% Framing
 
@@ -55,6 +51,7 @@ Bmin = estimate_Bmin(smoothed_framesFreq, PSD_Noise, k, alpha_matrix);
 PSD_Noise = PSD_Noise.*Bmin;
 
 t = [1:321]./windowSize*Fs;
+% ------------------------ Plot estimation at frequency bin 250 ---------%
 figure;
 plot(sqrt(PSD_Noise(:,250)),'r');
 hold on
@@ -70,44 +67,27 @@ legend('Estimated Noise PSD','Smoothed Noisy Sppech PSD','Original Noisy Speech 
 P_yy = framesFreqSquared; %mayb be estimated through the periodogram or a smoothed version
 P_nn = PSD_Noise;
 b = 1.5; %the amount of substraction
-Hwiener = max((P_yy - b.*P_nn)./P_yy,0);
-PSD_Speech = (Hwiener.*framesFreqSquared);
-% PSD_Speech = max(framesFreqSquared - b.*PSD_Noise,0);
-% figure;
-% plot(abs(sqrt(PSD_Speech(:,1))));
-% hold on
-% plot(abs(sqrt(framesFreqSquared(:,1))));
-% hold off
-
-figure;
-plot(sqrt(PSD_Speech(:,50)),'r');
-hold on
-plot(abs(framesFreq_c(:,50)),'b');
-plot(abs(framesFreq(:,50)), 'g');
-hold off
-
-
-
+% -------------------------- Wiener Filter -------------- %
+H = max((P_yy - b.*P_nn)./P_yy,0);
+PSD_Speech = (H.*framesFreqSquared);
 
 
 %% apply gain function
 [pri_SNR, pos_SNR] = estimate_priori_SNR(framesFreqSquared, PSD_Speech, PSD_Noise, 0.98);
+
+% ----------------------- MMSE Short-time Spectral Amplitude Gain Function ----%
 u = (pri_SNR./(1+pri_SNR)).*pos_SNR;
 com1 = sqrt(pi.*u)./(2.*pos_SNR);
 com2 = exp(-u./2);
 com3 = (1+u).*besseli(0,u./2) + u.*besseli(1,u./2); %modified bessel function of first kind
 Hstsa = com1.*com2.*com3;
-Hstsa = abs(Hstsa);
-%wiener gain function
-Hgain = pri_SNR./(pri_SNR+1);
 
-num_future_samples = 6;
+% ------------------------ Wiener Gain Function -------------------------%
+Hwiener = pri_SNR./(pri_SNR+1);
 
-% Hlsa = estimate_H_lsa(pri_SNR,num_future_samples,u);
-
+% ------------------------ apply both gain functions to noisy speech ----%
 framesSpeech_1  =(Hstsa.*abs(framesFreq)).*exp(complex(0,angle(framesFreq)));
-framesSpeech_2  =(Hgain.*abs(framesFreq)).*exp(complex(0,angle(framesFreq)));
-% framesSpeech_3  =(Hlsa.*abs(framesFreq(1:size(Hlsa,1),:))).*exp(complex(0,angle(framesFreq(1:size(Hlsa,1),:))));
+framesSpeech_2  =(Hwiener.*abs(framesFreq)).*exp(complex(0,angle(framesFreq)));
 
 
 %% Inverse transform
@@ -151,40 +131,84 @@ spectrogram(output_2,1024,512,[],Fs,'yaxis')
 title('Spectrogram of filtered signal using Wiener gain')
 
 
+
+
+
+
+
+
 %% Multi microphone system
 
-inputSize2 = size(mic1);
+% ------------- generate desired signal -------------------------------%
+% ------------- with desired angle alpha = 40 degrees -----------------%
 
+% --------------parameters for dual-channel speech enhancement -------%
+c = 340; % sound of the speed, in m/s
+alpha = 40; % beam angle in degree, as desired direction
+d = 0.045; % distance of the 2 mics, in m
+SNRmulti = 1; 
+% the generated desired signal, denoted by mic_sigs, is mixed with
+% speech shaped noise with the same coming angle as alpha
+[mic1,mic_sigs] = createMultiMicSignal(clean1s, speechshapednoise, SNRmulti, d, alpha, c, Fs);
+
+inputSize2 = size(mic1);
 mic_sigs = mic_sigs';
 framesTime_mic1 = windowing(mic_sigs(1,:), windowSize,overlap);
 framesTime_mic2 = windowing(mic_sigs(2,:),windowSize,overlap);
-
 framesFreq_mic1 = fft(framesTime_mic1')'; 
 framesFreq_mic2 = fft(framesTime_mic2')';
 
+% -------------- used the desired signal to construct filter W ---------%
 W = delayAndSum(framesFreq_mic1,alpha,Fs,c,d);
-sk = W(2,:).*framesFreq_mic1 + W(1,:).*framesFreq_mic2;
 
+% -------------- apply the beamformer filter to the desired signal -----%
+sk = W(1,:).*framesFreq_mic1 + W(2,:).*framesFreq_mic2;
+%sk = delayAndSum(framesFreq_mic1, framesFreq_mic2, alpha, c, d)
 Sk_t = ifft(sk','symmetric')';
-
 output_ds = overlapAdd(Sk_t,windowSize, overlap, inputSize2);
+
+% --------------- generate signals with coming angle beta -------------%
+beta = 180;
+% the generated undesired signal, denoted by mic_sigs2, is mixed with
+% speech shaped noise with the same coming angle as beta
+[mic2,mic_sigs2] = createMultiMicSignal(clean1s, speechshapednoise, SNRmulti, d, beta, c, Fs);
+mic_sigs2 = mic_sigs2';
+framesTime_mic1_2 = windowing(mic_sigs2(1,:), windowSize,overlap);
+framesTime_mic2_2 = windowing(mic_sigs2(2,:),windowSize,overlap);
+
+framesFreq_mic1_2 = fft(framesTime_mic1_2')'; 
+framesFreq_mic2_2 = fft(framesTime_mic2_2')';
+
+% --------------- apply previously constructed beamformer filter to the new
+% generated signal ----------------------------------------------------%
+sk_new = W(1,:).*framesFreq_mic1_2 + W(2,:).*framesFreq_mic2_2;
+Sk_t_new = ifft(sk_new','symmetric')';
+output_ds_new = overlapAdd(Sk_t_new,windowSize, overlap, inputSize2);
+
 
 
 figure;
-subplot(211)
+subplot(311)
 plot(mic_sigs(1,:));
 title('Input')
 ylim([-0.5 0.5])
-subplot(212)
+subplot(312)
 plot(output_ds)
-title('Output')
+title('Output, incoming angle = 40 degrees')
+ylim([-0.5 0.5])
+subplot(313)
+plot(output_ds_new)
+title('Output, incoming angle = 180 degrees')
 ylim([-0.5 0.5])
 
 figure;
-subplot(211)
-spectrogram(mic_sigs(1,:),1024,512,[],Fs,'yaxis')
+subplot(311)
+spectrogram(mic_sigs(2,:),1024,512,[],Fs,'yaxis')
 title('Spectrogram of noisy input signal')
-subplot(212)
+subplot(312)
 spectrogram(output_ds,1024,512,[],Fs,'yaxis')
-title('Spectrogram of filtered signal using Delay and sum')
+title('Spectrogram of filtered signal using Delay and sum, incoming angle = 40')
+subplot(313)
+spectrogram(output_ds_new,1024,512,[],Fs,'yaxis')
+title('Spectrogram of filtered signal using Delay and sum, incoming angle = 180')
 

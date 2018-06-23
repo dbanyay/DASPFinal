@@ -1,4 +1,4 @@
-function [Fs,clean1s,clean2s,babbles,nonstats,shapeds,mixed1a,mixed1b,mixed1c,mic1,mic_sigs, alpha,c] = readAudioFiles(c,alpha, d)
+function [Fs,clean1s,clean2s,babblenoise,nonstatnoise,speechshapednoise,mixed1a,mixed1b,mixed1c] = readAudioFiles()
 %readAudioFiles Read audio files, create shorter versions
 
 [clean1, Fs] = audioread('samples\clean_speech.wav');
@@ -54,16 +54,12 @@ timeaxis = timeaxis./Fs;
 
 %% Create mixed signals
 
-SNR = 1;
-mixed1a = create_NoisySpeech(clean1s, nonstats, SNR);
-mixed1b = create_NoisySpeech(clean1s, shapeds, SNR);
+SNR = 0;
+mixed1a = create_NoisySpeech(clean1s, nonstats, SNR); %non-stationary noise
+mixed1b = create_NoisySpeech(clean1s, shapeds, SNR); %speech shaped noise
+%Speech Shaped Noise (SSN) is defined as a random noise that has the same long-term spectrum as a given speech signal.
 mixed1c = create_NoisySpeech(clean1s, babbles, SNR);
 
-%% Create signals for multichannel reduction
-
-SNRmulti = 1;
-
-[mic1,mic_sigs] = createMultiMicSignal(clean1s, nonstatnoise, SNRmulti, d, alpha, c, Fs);
 
 end
 
