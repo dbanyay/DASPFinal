@@ -145,11 +145,12 @@ title('Spectrogram of filtered signal using Wiener gain')
 % --------------parameters for dual-channel speech enhancement -------%
 c = 340; % sound of the speed, in m/s
 alpha = 40; % beam angle in degree, as desired direction
+beta = 180; % coming angle in degree for noise
 d = 0.045; % distance of the 2 mics, in m
-SNRmulti = 1; 
+SNRmulti = 0; 
 % the generated desired signal, denoted by mic_sigs, is mixed with
 % speech shaped noise with the same coming angle as alpha
-[mic1,mic_sigs] = createMultiMicSignal(clean1s, speechshapednoise, SNRmulti, d, alpha, c, Fs);
+[mic1,mic_sigs] = createMultiMicSignal(clean1s, speechshapednoise, SNRmulti, d, alpha, beta, c, Fs);
 
 inputSize2 = size(mic1);
 mic_sigs = mic_sigs';
@@ -159,7 +160,7 @@ framesFreq_mic1 = fft(framesTime_mic1')';
 framesFreq_mic2 = fft(framesTime_mic2')';
 
 % -------------- used the desired signal to construct filter W ---------%
-W = delayAndSum(framesFreq_mic1,alpha,Fs,c,d);
+W = delayAndSum(framesFreq_mic1, alpha, Fs, c, d);
 
 % -------------- apply the beamformer filter to the desired signal -----%
 sk = W(1,:).*framesFreq_mic1 + W(2,:).*framesFreq_mic2;
@@ -167,11 +168,12 @@ sk = W(1,:).*framesFreq_mic1 + W(2,:).*framesFreq_mic2;
 Sk_t = ifft(sk','symmetric')';
 output_ds = overlapAdd(Sk_t,windowSize, overlap, inputSize2);
 
-% --------------- generate signals with coming angle beta -------------%
-beta = 180;
+% --------------- generate signals with different coming angle -------------%
+alpha_new = 180;
+beta_new = 180;
 % the generated undesired signal, denoted by mic_sigs2, is mixed with
 % speech shaped noise with the same coming angle as beta
-[mic2,mic_sigs2] = createMultiMicSignal(clean1s, speechshapednoise, SNRmulti, d, beta, c, Fs);
+[mic2,mic_sigs2] = createMultiMicSignal(clean1s, speechshapednoise, SNRmulti, d, alpha_new, beta_new, c, Fs);
 mic_sigs2 = mic_sigs2';
 framesTime_mic1_2 = windowing(mic_sigs2(1,:), windowSize,overlap);
 framesTime_mic2_2 = windowing(mic_sigs2(2,:),windowSize,overlap);
