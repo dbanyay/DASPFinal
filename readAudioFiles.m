@@ -63,7 +63,7 @@ mixed1c = create_NoisySpeech(clean1s, babbles, SNR);
 
 SNRmulti = 1;
 
-[mic1,mic_sigs] = createMultiMicSignal(clean1s, nonstats, SNRmulti, d, alpha, c, Fs);
+[mic1,mic_sigs] = createMultiMicSignal(clean1s, nonstatnoise, SNRmulti, d, alpha, c, Fs);
 
 end
 

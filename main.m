@@ -132,6 +132,17 @@ ylim([-0.5 0.5])
 % plot(output_3);
 % title('LSA')
 % ylim([-0.5 0.5])
+figure;
+subplot(311)
+spectrogram(input,1024,512,[],Fs,'yaxis')
+title('Spectrogram of noisy input signal')
+subplot(312)
+spectrogram(output_1,1024,512,[],Fs,'yaxis')
+title('Spectrogram of filtered signal using STSA')
+subplot(313)
+spectrogram(output_2,1024,512,[],Fs,'yaxis')
+title('Spectrogram of filtered signal using Wiener gain')
+
 
 %% Multi microphone system
 
@@ -161,3 +172,12 @@ subplot(212)
 plot(output_ds)
 title('Output')
 ylim([-0.5 0.5])
+
+figure;
+subplot(211)
+spectrogram(mic_sigs(1,:),1024,512,[],Fs,'yaxis')
+title('Spectrogram of noisy input signal')
+subplot(212)
+spectrogram(output_ds,1024,512,[],Fs,'yaxis')
+title('Spectrogram of filtered signal using Delay and sum')
+
