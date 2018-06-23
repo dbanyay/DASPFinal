@@ -35,19 +35,22 @@ framesFreq_c = fft(framesTime_c')';
 
 %% Noise PSD estimator
 framesFreqSquared = (abs(framesFreq).^2); % | |^2
+
+% ----------------------- Reduce Variance -------------------------------%
 alpha = 0.85;
 %a time-averaged magnitude spectrum to reduce the error variance
 smoothed_framesFreq = reduce_variance(framesFreqSquared, alpha);
 
-k = 80;  % sliding window D size, empirically set to 96
+% ----------------------- Estimate noise PSD as the minimum within each
+% sliding window --------------------------------------------------------%
+k = 80;  % sliding window D size, empirically set to 80
 PSD_Noise = noisePSD(smoothed_framesFreq,k);
+
 %implementing a time-varying and frequency-depended smoothing parameter for
 %noisy speech
 alpha_matrix = estimate_alpha(smoothed_framesFreq, PSD_Noise, framesFreqSquared);
 
-% smoothed_framesFreq = reduce_variance(framesFreqSquared, alpha_matrix);
-% PSD_Noise = noisePSD(smoothed_framesFreq,k);
-%bias compensation
+% ------------------------ bias compensation ----------------------------%
 Bmin = estimate_Bmin(smoothed_framesFreq, PSD_Noise, k, alpha_matrix);
 PSD_Noise = PSD_Noise.*Bmin;
 
@@ -58,6 +61,10 @@ hold on
 plot(sqrt(smoothed_framesFreq(:,250)));
 plot(abs(framesFreq(:,250)),'g');
 hold off
+title('Power Spectral Density, frequency bin = 250')
+xlabel('time frame')
+ylabel('PSD')
+legend('Estimated Noise PSD','Smoothed Noisy Sppech PSD','Original Noisy Speech PSD')
 
 %% Speech PSD estimator
 P_yy = framesFreqSquared; %mayb be estimated through the periodogram or a smoothed version
